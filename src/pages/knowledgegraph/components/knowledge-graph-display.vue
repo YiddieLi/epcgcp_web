@@ -1,14 +1,16 @@
 <template>
     <div class="knowledge-graph-display">
-        <div class="display-area" id="svg-area"></div>
+        <svg class="svg-area" id="svg"></svg>
     </div>
 </template>
 
 <script>
     import * as d3 from "d3"
+    import svgCoordinate from '../../../mixins/svgCoordinate.js'
 
     export default {
         name: "knowledge-graph-display",
+        mixins: [svgCoordinate],
         data() {
             return {
                 knowledgeGraphData: []
@@ -33,7 +35,7 @@
                     level: 2
                 }];
 
-                let relations = [{
+                let links = [{
                     source: 1,
                     target: 2,
                     relation: '关系1'
@@ -43,43 +45,37 @@
                     relation: '关系2'
                 }];
 
-                let displayDiv = $('#svg-area');
+                let displayDiv = $('#svg');
                 let width = displayDiv[0].clientWidth;
                 let height = displayDiv[0].clientHeight;
-                let svg = d3.select('#svg-area')
-                    .append('svg')
+                let svg = d3.select('svg')
                     .attr('width', `${width}`)
                     .attr('height', `${height}`);
                 svg.selectAll("*").remove();
+
+                let linkForce = d3
+                    .forceLink()
+                    .id(function (link) {
+                        return link.id
+                    })
+                    .strength(0.01);
+
                 let simulation = d3.forceSimulation()
-                    .force('link', d3.forceLink().id(function (link) {
-                        return link.id;
-                    }).strength(120))
+                    .force('link', linkForce)
                     .force('charge', d3.forceManyBody().strength(-120))
                     .force('center', d3.forceCenter(width / 2, height / 2));
 
-                let linkElements = svg.append('g')
-                    .attr('class', "links")
-                    .selectAll('line')
-                    .data(relations)
-                    .enter()
-                    .append('line')
-                    .attr('stroke-width', 1)
-                    .attr('stroke', "rgba(50,50,50,0.2)");
-
                 let nodeElements = svg.append('g')
-                    .attr('class', 'nodes')
                     .selectAll('circle')
                     .data(nodes)
                     .enter()
                     .append('circle')
-                    .attr('r', 10)
-                    .attr('fill', function (d) {
-                        return d.level === 1 ? '#408080' : '#01a0f1';
+                    .attr('r', 40)
+                    .attr('fill', function (node) {
+                        return node.level === 1 ? '#408080' : '#01a0f1';
                     });
 
-                let textElements = svg.append('g')
-                    .attr('class', 'texts')
+                let nodeTextElements = svg.append('g')
                     .selectAll('text')
                     .data(nodes)
                     .enter()
@@ -87,22 +83,56 @@
                     .text(function (node) {
                         return node.label
                     })
-                    .attr('font-size', 15)
-                    .attr('dx', 15)
-                    .attr('dy', 4);
+                    .attr('text-anchor', 'middle')
+                    .attr('font-size', 14)
+                    .attr('x', 0)
+                    .attr('y', 6);
+
+                let linkElements = svg.append('g')
+                    .selectAll('line')
+                    .data(links)
+                    .enter()
+                    .append('line')
+                    .attr("marker-end", "url(#resolved)")
+                    .attr('stroke-width', 2)
+                    .attr('stroke', "rgba(50,50,50)");
+
+                let linkTextElements = svg.append('g')
+                    .selectAll('.relation')
+                    .data(links)
+                    .enter()
+                    .append('text')
+                    .text(function (link) {
+                        return link.relation
+                    })
+                    .attr('font-size', 11)
+                    .attr('dx', 0)
+                    .attr('dy', 0);
+
+                let marker = svg.append("marker")
+                    .attr("id", "resolved")
+                    .attr("markerUnits", "userSpaceOnUse")
+                    .attr("viewBox", "0 -5 10 10")//坐标系的区域
+                    .attr("refX", 32)//箭头坐标
+                    .attr("refY", -1)
+                    .attr("markerWidth", 12)//标识的大小
+                    .attr("markerHeight", 12)
+                    .attr("orient", "auto")//绘制方向，可设定为：auto（自动确认方向）和 角度值
+                    .attr("stroke-width", 2)//箭头宽度
+                    .append("path")
+                    .attr("d", "M0,-5L10,0L0,5")//箭头的路径
+                    .attr('fill', '#000000');//箭头颜色
 
                 simulation.nodes(nodes).on('tick', () => {
-                    nodeElements.attr('cx', function (node) {
-                        return node.x;
-                    }).attr('cy', function (node) {
-                        return node.y;
+                    nodeElements.attr('transform', function (node) {
+                        return "translate(" + node.x + "," + node.y + ")";
                     });
-                    textElements.attr('x', function (node) {
-                        return node.x;
-                    }).attr('y', function (node) {
-                        return node.y;
+                    nodeTextElements.attr('transform', function (node) {
+                        return "translate(" + node.x + "," + node.y + ")"
                     });
-                    linkElements.attr('x1', function (link) {
+                    linkElements.attr('d', function (link) {
+                        return 'M ' + link.source.x + ' ' + link.source.y + ' L ' + link.target.x + ' ' + link.target.y;
+                    }).attr('x1', function (link) {
                         return link.source.x;
                     }).attr('y1', function (link) {
                         return link.source.y;
@@ -110,108 +140,20 @@
                         return link.target.x;
                     }).attr('y2', function (link) {
                         return link.target.y;
-                    })
+                    });
+                    linkTextElements.attr('transform', function (link) {
+                        if (link.target.x < link.source.x) {
+                            let bBox = this.getBBox();
+                            let rx = bBox.x + bBox.width / 2;
+                            let ry = bBox.y + bBox.height / 2;
+                            return 'rotate(180 ' + rx + ' ' + ry + ')';
+                        } else {
+                            return 'rotate(0)';
+                        }
+                    });
                 });
 
-                simulation.force('link').links(relations);
-
-                // svg.selectAll('circle')
-                //     .data(nodes)
-                //     .enter()
-                //     .append('circle')
-                //     .attr('r', 10)
-                //     .style('fill', function (d, i) {
-                //         return color(i);
-                //     })
-                //     .call(d3.drag()
-                //         .on('start', function (d) {
-                //             if (!d3.event.active) {
-                //                 simulation.alphaTarget(0.8).restart();
-                //             }
-                //             d.fx = d.x;
-                //             d.fy = d.y;
-                //         })
-                //         .on('drag', function (d) {
-                //             d.fx = d.event.x;
-                //             d.fy = d.event.y;
-                //         })
-                //         .on('end', function (d) {
-                //             if (!d3.event.active) {
-                //                 simulation.alphaTarget(0);
-                //             }
-                //             d.fx = null;
-                //             d.fy = null;
-                //         })
-                //     );
-                //
-                // svg.selectAll('text')
-                //     .data(nodes)
-                //     .enter()
-                //     .append('text')
-                //     .style('font-size', '12px')
-                //     .style('fill', '#000')
-                //     .attr('dx', 0)
-                //     .attr('dy', 0)
-                //     .text(function (d) {
-                //         return d.name;
-                //     });
-                //
-                // svg.selectAll('.relation')
-                //     .data(relations)
-                //     .enter()
-                //     .append('text')
-                //     .style('fill', 'red')
-                //     .style('font-size', '11px')
-                //     .attr('class', 'relation')
-                //     .attr('dx', 0)
-                //     .attr('dy', 0)
-                //     .text(function (d) {
-                //         return d.relation;
-                //     });
-                //
-                // svg.selectAll('line')
-                //     .data(relations)
-                //     .enter()
-                //     .append('line')
-                //     .style('stroke', '#ccc')
-                //     .style('stroke-width', 2);
-                //
-                // simulation.on('tick', function () {
-                //     svg.selectAll('circle')
-                //         .attr('cx', function (d) {
-                //             return d.x;
-                //         })
-                //         .attr('cy', function (d) {
-                //             return d.y;
-                //         });
-                //     svg.selectAll('text')
-                //         .attr('x', function (d) {
-                //             return d.x;
-                //         })
-                //         .attr('y', function (d) {
-                //             return d.y;
-                //         });
-                //     svg.selectAll('line')
-                //         .attr('x1', function (d) {
-                //             return d.source.x;
-                //         })
-                //         .attr('y1', function (d) {
-                //             return d.source.y;
-                //         })
-                //         .attr('x2', function (d) {
-                //             return d.target.x;
-                //         })
-                //         .attr('y2', function (d) {
-                //             return d.target.y;
-                //         });
-                //     svg.selectAll('.relation')
-                //         .attr('x', function (d) {
-                //             return (d.source.x + d.target.x) / 2;
-                //         })
-                //         .attr('y', function (d) {
-                //             return (d.source.y + d.target.y) / 2;
-                //         });
-                // })
+                simulation.force('link').links(links);
             }
         }
     }
@@ -223,7 +165,7 @@
         width: 100%;
         padding: 20px 10px;
         box-sizing: border-box;
-        .display-area {
+        .svg-area {
             height: 100%;
             width: 100%;
         }

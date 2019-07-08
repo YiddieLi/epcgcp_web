@@ -61,6 +61,7 @@
         </div>
         <div class="show-area">
             <knowledge-graph-display ref="knowledgeGraphDisplay"></knowledge-graph-display>
+            <!--<pie ref="pie"></pie>-->
         </div>
         <div class="info-area">
             <div class="info-area-title">
@@ -72,10 +73,11 @@
 
 <script>
     import KnowledgeGraphDisplay from './components/knowledge-graph-display.vue'
+    import Pie from './components/pie.vue'
 
     export default {
         name: "knowledge-graph",
-        components: {KnowledgeGraphDisplay},
+        components: {KnowledgeGraphDisplay, Pie},
         data() {
             return {
                 pageHeight: 0,
@@ -109,6 +111,7 @@
             },
             searchKnowledgeGraph() {
                 let self = this;
+                self.$refs.knowledgeGraphDisplay.setKnowledgeGraphData();
             },
             selectTag(item) {
                 item.isSelected = !item.isSelected;

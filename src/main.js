@@ -2,7 +2,7 @@ import Vue from "vue";
 import App from "./App.vue";
 import ElementUI from "element-ui";
 import Vodal from "vodal";
-import router from "./router/router";
+import router from "./router";
 import "element-ui/lib/theme-chalk/index.css";
 import $ from 'jquery'
 import './css/app.less'

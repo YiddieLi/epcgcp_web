@@ -78,12 +78,11 @@
     import KnowledgeGraphDisplay from './components/knowledge-graph-display.vue'
     import Pie from './components/pie.vue'
     import * as d3 from 'd3'
-    import mixinKnowledgeGraph from '../../mixins/knowledgeGraph.js'
+    import {drawKnowledgeGraph} from '../../mixins/knowledgeGraph.js'
 
     export default {
         name: "knowledge-graph",
         components: {KnowledgeGraphDisplay, Pie},
-        mixins: [mixinKnowledgeGraph],
         data() {
             return {
                 pageHeight: 0,
@@ -119,15 +118,15 @@
                 let self = this;
                 // self.$refs.knowledgeGraphDisplay.setKnowledgeGraphData();
                 let nodes = [{
-                    label: '节点1节点1节点1节点1',
+                    name: '节点1节点1节点1节点1',
                     id: 1,
                     level: 1
                 }, {
-                    label: '节点2',
+                    name: '节点2',
                     id: 2,
                     level: 2
                 }, {
-                    label: '节点3',
+                    name: '节点3',
                     id: 3,
                     level: 2
                 }];
@@ -150,7 +149,7 @@
                 let height = svgDiv[0].clientHeight;
                 let svg = d3.select('#graph-svg');
                 svg.selectAll('*').remove();
-                self.drawKnowledgeGraph(svg, data, width, height);
+                drawKnowledgeGraph(svg, data, width, height);
             },
             selectTag(item) {
                 item.isSelected = !item.isSelected;

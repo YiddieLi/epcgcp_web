@@ -60,8 +60,11 @@
             </div>
         </div>
         <div class="show-area">
-            <knowledge-graph-display ref="knowledgeGraphDisplay"></knowledge-graph-display>
+            <!--<knowledge-graph-display ref="knowledgeGraphDisplay"></knowledge-graph-display>-->
             <!--<pie ref="pie"></pie>-->
+            <div class="graph-area">
+                <svg id="graph-svg" style="height: 100%;width: 100%;"></svg>
+            </div>
         </div>
         <div class="info-area">
             <div class="info-area-title">
@@ -74,10 +77,13 @@
 <script>
     import KnowledgeGraphDisplay from './components/knowledge-graph-display.vue'
     import Pie from './components/pie.vue'
+    import * as d3 from 'd3'
+    import mixinKnowledgeGraph from '../../mixins/knowledgeGraph.js'
 
     export default {
         name: "knowledge-graph",
         components: {KnowledgeGraphDisplay, Pie},
+        mixins: [mixinKnowledgeGraph],
         data() {
             return {
                 pageHeight: 0,
@@ -111,7 +117,40 @@
             },
             searchKnowledgeGraph() {
                 let self = this;
-                self.$refs.knowledgeGraphDisplay.setKnowledgeGraphData();
+                // self.$refs.knowledgeGraphDisplay.setKnowledgeGraphData();
+                let nodes = [{
+                    label: '节点1节点1节点1节点1',
+                    id: 1,
+                    level: 1
+                }, {
+                    label: '节点2',
+                    id: 2,
+                    level: 2
+                }, {
+                    label: '节点3',
+                    id: 3,
+                    level: 2
+                }];
+
+                let links = [{
+                    source: 1,
+                    target: 2,
+                    relation: '关系1'
+                }, {
+                    source: 1,
+                    target: 3,
+                    relation: '关系2'
+                }];
+                let data = {
+                    nodes: nodes,
+                    links: links
+                };
+                let svgDiv = $('#graph-svg');
+                let width = svgDiv[0].clientWidth;
+                let height = svgDiv[0].clientHeight;
+                let svg = d3.select('#graph-svg');
+                svg.selectAll('*').remove();
+                self.drawKnowledgeGraph(svg, data, width, height);
             },
             selectTag(item) {
                 item.isSelected = !item.isSelected;
@@ -126,6 +165,7 @@
 
 <style lang="less">
     @import "../../css/global.less";
+    @import "../../css/graph.less";
 
     .knowledge-graph {
         height: 100%;
@@ -189,6 +229,12 @@
             float: left;
             width: 60%;
             height: 100%;
+            .graph-area {
+                height: 100%;
+                width: 100%;
+                padding: 20px 10px;
+                box-sizing: border-box;
+            }
         }
         .info-area {
             float: left;

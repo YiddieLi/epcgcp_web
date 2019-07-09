@@ -1,0 +1,61 @@
+circle {
+  cursor: move;
+  stroke-opacity: 0.8;
+  stroke-width: 2px;
+  stroke: white;
+}
+
+circle:hover {
+  stroke-opacity: 0.5;
+  stroke-width: 5px;
+}
+
+.selected circle {
+  stroke-width: 5px;
+}
+
+.selected {
+  stroke-dasharray: 1;
+}
+
+.finded circle {
+  stroke-width: 20px;
+  stroke: #00FFFB;
+}
+
+path {
+  fill: none;
+  cursor: pointer;
+  stroke: #00FFFB;
+  stroke-width: 2px;
+}
+
+path:hover {
+  stroke-width: 4px !important;
+  stroke-opacity: 0.8;
+}
+
+.route {
+  stroke: red;
+  stroke-width: 5px;
+}
+
+.selected path {
+  stroke: yellow;
+  stroke-width: 4px !important;
+}
+
+text {
+  fill: white;
+  text-anchor: middle;
+  user-select: none;
+  pointer-events: none;
+}
+
+.node-text {
+  font-size: 5px;
+  user-select: none;
+  pointer-events: none;
+  text-anchor: middle;
+}
+

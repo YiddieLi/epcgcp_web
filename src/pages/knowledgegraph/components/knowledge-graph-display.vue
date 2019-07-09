@@ -6,11 +6,10 @@
 
 <script>
     import * as d3 from "d3"
-    import svgCoordinate from '../../../mixins/svgCoordinate.js'
 
     export default {
         name: "knowledge-graph-display",
-        mixins: [svgCoordinate],
+        mixins: [],
         data() {
             return {
                 knowledgeGraphData: []
@@ -22,7 +21,7 @@
                 if (data) self.knowledgeGraphData = JSON.parse(JSON.stringify(data));
 
                 let nodes = [{
-                    label: '节点1',
+                    label: '节点1节点1节点1节点1',
                     id: 1,
                     level: 1
                 }, {
@@ -72,6 +71,7 @@
                     .force('center', d3.forceCenter(width / 2, height / 2));
 
                 let marker = svg.append("marker")
+                    .attr('class', 'link-marker')
                     .attr("id", "resolved")
                     .attr("markerUnits", "userSpaceOnUse")
                     .attr("viewBox", "0 -5 10 10")//坐标系的区域
@@ -109,6 +109,7 @@
                     .attr('marker-end', 'url(#resolved)');
 
                 let linkTextElements = svg.append('g')
+                    .attr('class', 'line-text')
                     .selectAll('.relation')
                     .data(links)
                     .enter()
@@ -116,16 +117,15 @@
                     .text(function (link) {
                         return link.relation
                     })
-                    .attr('class', 'line-text')
                     .attr('dx', 0)
                     .attr('dy', 0);
 
                 let nodeElements = svg.append('g')
+                    .attr('class', 'nodes')
                     .selectAll('circle')
                     .data(nodes)
                     .enter()
                     .append('circle')
-                    .attr('class', 'nodes')
                     .attr('r', nodeRadius)
                     .attr('fill', function (node) {
                         return node.level === 1 ? '#408080' : '#01a0f1';
@@ -133,17 +133,21 @@
                     .call(dragDrop);
 
                 let nodeTextElements = svg.append('g')
+                    .attr('class', 'node-text')
                     .selectAll('text')
                     .data(nodes)
                     .enter()
                     .append('text')
                     .text(function (node) {
-                        return node.label
+                        if (node.label.length > 5) {
+                            return node.label.substr(0, 4) + '…'
+                        } else {
+                            return node.label
+                        }
                     })
-                    .attr('class', 'node-text')
                     .attr('text-anchor', 'middle')
                     .attr('x', 0)
-                    .attr('y', 6);
+                    .attr('dy', '.35em');
 
                 simulation.on('tick', () => {
                     nodeElements.attr('transform', (node) => {
@@ -168,6 +172,14 @@
                     });
                     linkTextElements.attr('transform', (link) => {
                         return "translate(" + (link.source.x + link.target.x) / 2 + "," + (link.source.y + link.target.y) / 2 + ")"
+                        // if (link.target.x < link.source.x) {
+                        //     let bBox = link.parentNode.getBBox();
+                        //     let rx = bBox.x + bBox.width / 2;
+                        //     let ry = bBox.y + bBox.height / 2;
+                        //     return 'rotate(180 ' + rx + ' ' + ry + ')';
+                        // } else {
+                        //     return 'rotate(0)';
+                        // }
                     });
                 });
 
@@ -188,19 +200,24 @@
         .svg-area {
             height: 100%;
             width: 100%;
-            .nodes {
-                cursor: default;
+            .nodes circle {
+                cursor: pointer;
+                stroke: @darkBlueColor;
+                stroke-width: 2;
             }
             .links line {
                 stroke: @darkGreyColor;
                 stroke-opacity: 1;
                 stroke-width: 2;
             }
-            .node-text {
-                cursor: default;
+            .node-text text {
+                cursor: pointer;
             }
-            .line-text {
-                font-size: 11px;
+            .line-text text {
+                font-size: 12px;
+            }
+            .link-marker {
+
             }
         }
     }

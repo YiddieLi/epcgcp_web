@@ -1,7 +1,7 @@
 import * as d3 from 'd3'
 
 let knowledgeGraphConfig = {
-    gravitation: 0.01,
+    gravitation: 0.02,
     repulsion: -120,
     nodeSize: 30,
     linkWidth: 2,
@@ -10,7 +10,11 @@ let knowledgeGraphConfig = {
     linkScale: 1
 };
 
-let nodeElements = null,
+let nodes = null,
+    links = null,
+    containerSvg = null,
+    graphSvg = null,
+    nodeElements = null,
     linkElements = null,
     linkTextElements = null,
     colors = d3.scaleOrdinal(d3.schemeCategory10),
@@ -161,67 +165,76 @@ function getLinkTextRotate(link) {
 }
 
 function textBreaking(d3text, text) {
-    let len = 0;
-    try {
-        len = text.length;
-    } catch (error) {
-        console.log("Warning: nodes缺少name标签！");
-        return;
-    }
-    if (len <= 4) {
-        d3text.append("tspan")
-            .attr("x", 0)
-            .attr("y", 2)
-            .text(text);
+    let showText = null;
+    text = text.toString();
+    if (text.length < 4) {
+        showText = text;
     } else {
-        let top_text = text.substring(0, 4);
-        let mid_text = text.substring(4, 9);
-        let bot_ext = text.substring(9, len);
-        let top_y = -9;
-        let mid_y = 2;
-        let bot_y = 10;
-        if (len < 10) {
-            top_y += 5;
-            mid_y += 5;
-        } else {
-            bot_ext = text.substring(9, 11) + "...";
-        }
-
-        d3text.text("");
-        d3text.append("tspan")
-            .attr("x", 0)
-            .attr("y", top_y)
-            .text(function () {
-                return top_text;
-            });
-        d3text.append("tspan")
-            .attr("x", 0)
-            .attr("y", mid_y)
-            .text(function () {
-                return mid_text;
-            });
-        d3text.append("tspan")
-            .attr("x", 0)
-            .attr("y", bot_y)
-            .text(function () {
-                return bot_ext;
-            });
+        showText = text.substring(0, 4) + '…'
     }
+    d3text.append("tspan")
+        .attr("x", 0)
+        .attr("y", 2)
+        .text(showText);
 }
 
-function drawKnowledgeGraph(svg, data, width, height) {
+function showNodeText(key) {
+    //节点文字
+    if (!key) key = 'name';
+    nodeElements.selectAll("text").remove();
+    nodeElements.append("text")
+        .attr("class", "node-text")
+        .attr("dy", ".10em")
+        .attr("x", function (node) {
+            return textBreaking(d3.select(this), node[key]);
+        });
+}
+
+function updateLabelsBar(data) {
+    let labelBarUl = d3.select('#labels-bar').select('ul');
+    labelBarUl.selectAll('*').remove();
+    let excludeAttr = ['x', 'y', 'vx', 'vy', 'dx', 'dy', 'selected', 'color', 'size', 'index'];
+    data.forEach(node => {
+        for (let attr in node) {
+            if (node.hasOwnProperty(attr) && excludeAttr.indexOf(attr) === -1) {
+                labelBarUl.append("li")
+                    .attr('class', 'labels')
+                    .attr("id", "id-" + attr)
+                    .text(attr);
+                excludeAttr.push(attr);
+            }
+        }
+    });
+    d3.select("#id-name").classed("selected-labels", true);
+
+    d3.selectAll(".labels")
+        .on("click", function () {
+            d3.selectAll(".selected-labels")
+                .classed("selected-labels", false);
+            d3.select(this)
+                .classed("selected-labels", true);
+            showNodeText($(this)[0].textContent);
+        })
+}
+
+function drawKnowledgeGraph(containerSvgId, graphId, data) {
     console.log('enter');
-    let nodes = data.nodes;
-    let links = data.links;
-    svg.attr('width', width).attr('height', height);
+    nodes = data.nodes;
+    links = data.links;
+    containerSvg = d3.select(containerSvgId);
+    graphSvg = d3.select(graphId);
+    graphSvg.selectAll('*').remove();
 
     let linkForce = d3.forceLink().id((link) => {
         return link.id
     }).strength(knowledgeGraphConfig.gravitation);
+
     let simulation = d3.forceSimulation().force('link', linkForce).on('end', () => {
         simulation.stop()
     });
-
+    let containerDiv = $(containerSvgId);
+    let width = containerDiv[0].clientWidth;
+    let height = containerDiv[0].clientHeight;
     simulation.alphaDecay(0.002)
         .alphaMin(0.002)
         .force('r', null)
@@ -232,7 +245,7 @@ function drawKnowledgeGraph(svg, data, width, height) {
     simulation.nodes(nodes).on('tick', tick).force('link').links(links);
 
     //关系连线
-    linkElements = svg.append('g')
+    linkElements = graphSvg.append('g')
         .attr('class', 'link-layout')
         .selectAll('g')
         .data(links);
@@ -247,7 +260,7 @@ function drawKnowledgeGraph(svg, data, width, height) {
         .attr('class', 'link-marker')
         .attr('markerUnits', 'userSpaceOnUse')
         .attr('viewBox', '0 -50 100 100')
-        .attr('refX', 400)
+        .attr('refX', 340)
         .attr('refY', 0)
         .attr('markerWidth', 12)
         .attr('markerHeight', 12)
@@ -272,7 +285,7 @@ function drawKnowledgeGraph(svg, data, width, height) {
         .on('mouseover.hover-link', hoverLink);
 
     //关系文字
-    linkTextElements = svg.append('g')
+    linkTextElements = graphSvg.append('g')
         .attr('class', 'text-layout')
         .selectAll('text')
         .data(links);
@@ -289,7 +302,7 @@ function drawKnowledgeGraph(svg, data, width, height) {
         .text(link => link.relation);
 
     //节点
-    nodeElements = svg.append('g')
+    nodeElements = graphSvg.append('g')
         .attr('class', 'node-layout')
         .selectAll('.node')
         .data(nodes);
@@ -318,13 +331,44 @@ function drawKnowledgeGraph(svg, data, width, height) {
             return node.color;
         }
     }).attr('stroke', 'white');
-    //节点文字
-    nodeElements.append("text")
-        .attr("class", "node-text")
-        .attr("dy", ".35em")
-        .attr("x", function (node) {
-            return textBreaking(d3.select(this), node['name']);
+
+    showNodeText();
+
+    updateLabelsBar(nodes);
+
+    //滚轮缩放
+    let zoom = d3.zoom()
+        .on("zoom", function () {
+            let translateScaleRotate = getTranslateAndScaleAndRotate(graphId);
+            d3.event.transform["rotate"] = translateScaleRotate.rotate;
+            zoomFunction(d3.event.transform);
         });
+
+    containerSvg.call(zoom).on('dblclick.zoom', null);
+}
+
+function zoomFunction(vars) {
+    let translate = "translate(" + vars.x + "," + vars.y + ") ";
+    let scale = "scale(" + vars.k + ") ";
+    let rotate = "rotate(0)";
+    if (typeof(vars.rotate) === "number") {
+        rotate = "rotate(" + vars.rotate + "," + (window.innerWidth / 2) + " " + (window.innerHeight / 2) + ")";
+    } else {
+        rotate = "rotate(" + vars.rotate.split(",")[0] + "," + (window.innerWidth / 2) + " " + (window.innerHeight / 2) + ")";
+    }
+    graphSvg.attr("transform", translate + scale + rotate);
+}
+
+function getTranslateAndScaleAndRotate(element) {
+    let transform = d3.select(element).attr("transform");
+    let matchTranslateScale = transform && /translate/.test(transform) && /scale/.test(transform) && transform.match(/translate([^]+)\s?scale([^]+)/);
+    let translate = matchTranslateScale && matchTranslateScale[1].split(",") || [0, 0];
+    let k = matchTranslateScale && matchTranslateScale[2] || 1;
+    let matchRotate = transform && /rotate/.test(transform) && transform.match(/\s?rotate\(([^)]+)/);
+    let rotate = matchRotate && matchRotate[1] || 0;
+    let x = translate[0];
+    let y = translate[1];
+    return {"x": x, "y": y, "k": k, "rotate": rotate};
 }
 
 export {drawKnowledgeGraph}

@@ -62,8 +62,18 @@
         <div class="show-area">
             <!--<knowledge-graph-display ref="knowledgeGraphDisplay"></knowledge-graph-display>-->
             <!--<pie ref="pie"></pie>-->
-            <div class="graph-area">
-                <svg id="graph-svg" style="height: 100%;width: 100%;"></svg>
+            <svg class="graph-area" id="container-svg">
+                <g id="network-graph"></g>
+            </svg>
+            <div class="labels-bar" id="labels-bar">
+                <ul>
+                    <!--<template v-for="(item,$index) in nodeTextKeyList">-->
+                    <!--<li :key="$index" @click="selectNodeTextKey(item)"-->
+                    <!--:class="{'selected-node-text-key':selectedNodeTextKey&&selectedNodeTextKey===item}">-->
+                    <!--<span>{{item}}</span>-->
+                    <!--</li>-->
+                    <!--</template>-->
+                </ul>
             </div>
         </div>
         <div class="info-area">
@@ -106,7 +116,9 @@
                 attrList: [{
                     name: "type",
                     isSelected: false
-                }]
+                }],
+                nodeTextKeyList: [],
+                selectedNodeTextKey: null
             }
         },
         methods: {
@@ -119,16 +131,13 @@
                 // self.$refs.knowledgeGraphDisplay.setKnowledgeGraphData();
                 let nodes = [{
                     name: '节点1节点1节点1节点1',
-                    id: 1,
-                    level: 1
+                    id: 1
                 }, {
                     name: '节点2',
-                    id: 2,
-                    level: 2
+                    id: 2
                 }, {
                     name: '节点3',
-                    id: 3,
-                    level: 2
+                    id: 3
                 }];
 
                 let links = [{
@@ -144,12 +153,11 @@
                     nodes: nodes,
                     links: links
                 };
-                let svgDiv = $('#graph-svg');
-                let width = svgDiv[0].clientWidth;
-                let height = svgDiv[0].clientHeight;
-                let svg = d3.select('#graph-svg');
-                svg.selectAll('*').remove();
-                drawKnowledgeGraph(svg, data, width, height);
+                self.nodeTextKeyList = ['id', 'name'];
+                self.selectedNodeTextKey = null;
+                let containerSvgId = '#container-svg';
+                let graphId = '#network-graph';
+                drawKnowledgeGraph(containerSvgId, graphId, data);
             },
             selectTag(item) {
                 item.isSelected = !item.isSelected;
@@ -158,6 +166,9 @@
         mounted() {
             let self = this;
             self.pageHeight = this.$store.state.mainHeight;
+            $(document).ready(function () {
+                self.searchKnowledgeGraph();
+            });
         }
     };
 </script>
@@ -170,6 +181,7 @@
         height: 100%;
         width: 100%;
         background-color: @lightGreyBgColor;
+        overflow: hidden;
         .search-area {
             float: left;
             width: 20%;
@@ -229,10 +241,23 @@
             width: 60%;
             height: 100%;
             .graph-area {
-                height: 100%;
+                height: ~'calc(100% - 37px)';
                 width: 100%;
-                padding: 20px 10px;
+                padding: 0 10px;
                 box-sizing: border-box;
+            }
+            .labels-bar {
+                width: 100%;
+                height: 20px;
+                line-height: 20px;
+                padding: 8px 0;
+                cursor: default;
+                border-top: 1px solid @borderColor;
+                ul {
+                    margin: 0;
+                    padding: 0;
+                    list-style: none;
+                }
             }
         }
         .info-area {

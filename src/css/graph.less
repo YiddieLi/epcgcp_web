@@ -1,7 +1,7 @@
 @import "./global.less";
 
 circle {
-  cursor: move;
+  cursor: pointer;
   stroke-opacity: 0.8;
   stroke-width: 2px;
   stroke: white;
@@ -12,12 +12,17 @@ circle:hover {
   stroke-width: 5px;
 }
 
+.selected {
+  stroke-dasharray: 1;
+}
+
 .selected circle {
   stroke-width: 5px;
 }
 
-.selected {
-  stroke-dasharray: 1;
+.selected path {
+  stroke: yellow;
+  stroke-width: 4px !important;
 }
 
 .finded circle {
@@ -42,11 +47,6 @@ path:hover {
   stroke-width: 5px;
 }
 
-.selected path {
-  stroke: yellow;
-  stroke-width: 4px !important;
-}
-
 text {
   //fill: white;
   text-anchor: middle;
@@ -55,16 +55,31 @@ text {
 }
 
 .node-text {
-  font-size: 5px;
+  font-size: 8px;
   user-select: none;
   pointer-events: none;
   text-anchor: middle;
 }
 
 .link-text {
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .link-marker {
+}
+
+.labels {
+  margin-left: 10px;
+  float: left;
+  padding: 0 10px;
+  border: 1px solid @darkGreyColor;
+  border-radius: 5px;
+  background-color: @whiteColor;
+}
+
+.selected-labels {
+  border: 1px solid @darkGreenColor;
+  background-color: @darkGreenColor;
+  color: white;
 }
 

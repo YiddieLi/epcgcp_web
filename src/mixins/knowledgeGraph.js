@@ -184,10 +184,11 @@ function showNodeText(key) {
     nodeElements.selectAll("text").remove();
     nodeElements.append("text")
         .attr("class", "node-text")
-        .attr("dy", ".10em")
+        .attr("dy", ".30em")
         .attr("x", function (node) {
             return textBreaking(d3.select(this), node[key]);
-        });
+        })
+        .attr('fill', 'white');
 }
 
 function updateLabelsBar(data) {
@@ -297,7 +298,6 @@ function drawKnowledgeGraph(containerSvgId, graphId, data) {
     linkTextElementsEnter.append('textPath');
 
     linkTextElements = linkTextElementsEnter.merge(linkTextElements);
-    console.log(linkTextElements, 'linkTextElements')
     linkTextElements.select('textPath')
         .text(link => link.relation);
 
@@ -323,7 +323,7 @@ function drawKnowledgeGraph(containerSvgId, graphId, data) {
         }).lower();
 
     nodeElements = nodeElementsEnter.merge(nodeElements);
-    nodeElements.attr('fill', (node) => {
+    nodeElements.select('circle').attr('fill', (node) => {
         if ('color' in node) {
             return node.color;
         } else {

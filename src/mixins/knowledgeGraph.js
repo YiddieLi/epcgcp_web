@@ -84,7 +84,7 @@ function tick() {
     nodeElements.attr('transform', node => 'translate(' + node.x + ',' + node.y + ')');
     linkElements.select('path').attr('d', link => getLinkPath(link, knowledgeGraphConfig.linkType));
 
-    // .attr('transform', link => 'translate(' + (link.source.x + link.target.x) / 2 + ',' + (link.source.y + link.target.y) / 2 + ')');
+    // linkTextElements.attr('transform', link => 'translate(' + (link.source.x + link.target.x) / 2 + ',' + (link.source.y + link.target.y) / 2 + ')');
     linkTextElements.attr("dx", link => getLinkTextDx(link))
         .attr("transform", link => getLinkTextRotate(link));
 }
@@ -178,21 +178,19 @@ function showNodeText(key) {
         });
 }
 
-function updateLabelsBar(data) {
+function updateLabelsBar(node) {
     let labelBarUl = d3.select('#labels-bar').select('ul');
     labelBarUl.selectAll('*').remove();
     let excludeAttr = ['x', 'y', 'vx', 'vy', 'dx', 'dy', 'selected', 'color', 'size', 'index', 'properties', 'labels'];
-    data.forEach(node => {
-        for (let attr in node) {
-            if (node.hasOwnProperty(attr) && excludeAttr.indexOf(attr) === -1) {
-                labelBarUl.append("li")
-                    .attr('class', 'labels')
-                    .attr("id", "id-" + attr)
-                    .text(attr);
-                excludeAttr.push(attr);
-            }
+    for (let attr in node) {
+        if (node.hasOwnProperty(attr) && excludeAttr.indexOf(attr) === -1) {
+            labelBarUl.append("li")
+                .attr('class', 'labels')
+                .attr("id", "id-" + attr)
+                .text(attr);
+            excludeAttr.push(attr);
         }
-    });
+    }
     d3.select("#id-name").classed("selected-labels", true);
 
     d3.selectAll(".labels")
@@ -249,7 +247,7 @@ function drawKnowledgeGraph(containerSvgId, graphId, data, afterClickNode) {
         .attr('class', 'link-marker')
         .attr('markerUnits', 'userSpaceOnUse')
         .attr('viewBox', '0 -50 100 100')
-        .attr('refX', 340)
+        .attr('refX', 350)
         .attr('refY', 0)
         .attr('markerWidth', 12)
         .attr('markerHeight', 12)
@@ -282,12 +280,12 @@ function drawKnowledgeGraph(containerSvgId, graphId, data, afterClickNode) {
     let linkTextElementsEnter = linkTextElements.enter()
         .append('text')
         .attr('class', 'link-text')
-        .attr('dx', 0)
-        .attr('dy', 0);
+        .attr('dy', -4);
     linkTextElementsEnter.append('textPath');
 
     linkTextElements = linkTextElementsEnter.merge(linkTextElements);
     linkTextElements.select('textPath')
+        .attr("xlink:href", link => "#link-" + link.index)
         .text(link => link.relation);
 
     //节点
@@ -305,6 +303,7 @@ function drawKnowledgeGraph(containerSvgId, graphId, data, afterClickNode) {
             d3.select(this).classed('selected', true);
             node['selected'] = true;
             simulation.stop();
+            updateLabelsBar(node);
             if (afterClickNode) afterClickNode(node);
         })
         .call(d3.drag().on('start', dragStart).on('drag', dragging).on('end', dragEnd));
@@ -327,8 +326,6 @@ function drawKnowledgeGraph(containerSvgId, graphId, data, afterClickNode) {
     });
 
     showNodeText();
-
-    updateLabelsBar(nodes);
 
     //滚轮缩放
     let zoom = d3.zoom()

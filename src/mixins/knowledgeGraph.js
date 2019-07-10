@@ -1,7 +1,7 @@
 import * as d3 from 'd3'
 
 let knowledgeGraphConfig = {
-    gravitation: 0.02,
+    gravitation: 0.01,
     repulsion: -120,
     nodeSize: 30,
     linkWidth: 2,
@@ -14,6 +14,7 @@ let nodes = null,
     links = null,
     containerSvg = null,
     graphSvg = null,
+    simulation = null,
     nodeElements = null,
     linkElements = null,
     linkTextElements = null,
@@ -24,19 +25,6 @@ let nodes = null,
 
 function selectLink(link) {
     link['selected'] = true;
-}
-
-function hoverLink(link) {
-
-}
-
-function selectNode(node) {
-    d3.select(this).classed('selected', true);
-    node['selected'] = true;
-}
-
-function hoverNode(node) {
-
 }
 
 function dragStart() {
@@ -86,7 +74,7 @@ function dragging() {
 }
 
 function dragEnd(node) {
-    d3.select(this).classed('selected', false);
+    // d3.select(this).classed('selected', false);
     node.selected = false;
     nodeElements.style("opacity", 1);
     linkElements.style("opacity", 1);
@@ -97,8 +85,8 @@ function tick() {
     linkElements.select('path').attr('d', link => getLinkPath(link, knowledgeGraphConfig.linkType));
 
     // .attr('transform', link => 'translate(' + (link.source.x + link.target.x) / 2 + ',' + (link.source.y + link.target.y) / 2 + ')');
-    linkTextElements.attr('transform', link => getLinkTextRotate(link))
-        .attr('dx', link => getLinkTextDx(link))
+    linkTextElements.attr("dx", link => getLinkTextDx(link))
+        .attr("transform", link => getLinkTextRotate(link));
 }
 
 function getLinkPath(link, linkType) {
@@ -187,14 +175,13 @@ function showNodeText(key) {
         .attr("dy", ".30em")
         .attr("x", function (node) {
             return textBreaking(d3.select(this), node[key]);
-        })
-        .attr('fill', 'white');
+        });
 }
 
 function updateLabelsBar(data) {
     let labelBarUl = d3.select('#labels-bar').select('ul');
     labelBarUl.selectAll('*').remove();
-    let excludeAttr = ['x', 'y', 'vx', 'vy', 'dx', 'dy', 'selected', 'color', 'size', 'index'];
+    let excludeAttr = ['x', 'y', 'vx', 'vy', 'dx', 'dy', 'selected', 'color', 'size', 'index', 'properties', 'labels'];
     data.forEach(node => {
         for (let attr in node) {
             if (node.hasOwnProperty(attr) && excludeAttr.indexOf(attr) === -1) {
@@ -218,7 +205,7 @@ function updateLabelsBar(data) {
         })
 }
 
-function drawKnowledgeGraph(containerSvgId, graphId, data) {
+function drawKnowledgeGraph(containerSvgId, graphId, data, afterClickNode) {
     console.log('enter');
     nodes = data.nodes;
     links = data.links;
@@ -230,7 +217,7 @@ function drawKnowledgeGraph(containerSvgId, graphId, data) {
         return link.id
     }).strength(knowledgeGraphConfig.gravitation);
 
-    let simulation = d3.forceSimulation().force('link', linkForce).on('end', () => {
+    simulation = d3.forceSimulation().force('link', linkForce).on('end', () => {
         simulation.stop()
     });
     let containerDiv = $(containerSvgId);
@@ -243,6 +230,7 @@ function drawKnowledgeGraph(containerSvgId, graphId, data) {
         .force('center', d3.forceCenter(width / 2, height / 2))
         .force('collision', d3.forceCollide(knowledgeGraphConfig.nodeSize));
 
+    simulation.restart();
     simulation.nodes(nodes).on('tick', tick).force('link').links(links);
 
     //关系连线
@@ -282,8 +270,7 @@ function drawKnowledgeGraph(containerSvgId, graphId, data) {
             }
             return link.width;
         })
-        .on('mousedown.select-link', selectLink)
-        .on('mouseover.hover-link', hoverLink);
+        .on('mousedown.select-link', selectLink);
 
     //关系文字
     linkTextElements = graphSvg.append('g')
@@ -294,7 +281,9 @@ function drawKnowledgeGraph(containerSvgId, graphId, data) {
 
     let linkTextElementsEnter = linkTextElements.enter()
         .append('text')
-        .attr('class', 'link-text');
+        .attr('class', 'link-text')
+        .attr('dx', 0)
+        .attr('dy', 0);
     linkTextElementsEnter.append('textPath');
 
     linkTextElements = linkTextElementsEnter.merge(linkTextElements);
@@ -311,8 +300,13 @@ function drawKnowledgeGraph(containerSvgId, graphId, data) {
     let nodeElementsEnter = nodeElements.enter()
         .append('g')
         .attr('class', 'node')
-        .on('mousedown.select-node', selectNode)
-        .on('mousedown.hover-node', hoverNode)
+        .on('mousedown.select-node', function (node) {
+            d3.selectAll(".selected").classed("selected", false);
+            d3.select(this).classed('selected', true);
+            node['selected'] = true;
+            simulation.stop();
+            if (afterClickNode) afterClickNode(node);
+        })
         .call(d3.drag().on('start', dragStart).on('drag', dragging).on('end', dragEnd));
     nodeElementsEnter.append('circle')
         .attr('r', (node) => {
@@ -330,7 +324,7 @@ function drawKnowledgeGraph(containerSvgId, graphId, data) {
             node['color'] = colors(Math.floor(Math.random() * 10));
             return node.color;
         }
-    }).attr('stroke', 'white');
+    });
 
     showNodeText();
 

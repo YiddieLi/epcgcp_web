@@ -66,33 +66,29 @@
                 <g id="network-graph"></g>
             </svg>
             <div class="labels-bar" id="labels-bar">
-                <ul>
-                    <!--<template v-for="(item,$index) in nodeTextKeyList">-->
-                    <!--<li :key="$index" @click="selectNodeTextKey(item)"-->
-                    <!--:class="{'selected-node-text-key':selectedNodeTextKey&&selectedNodeTextKey===item}">-->
-                    <!--<span>{{item}}</span>-->
-                    <!--</li>-->
-                    <!--</template>-->
-                </ul>
+                <ul></ul>
             </div>
         </div>
         <div class="info-area">
             <div class="info-area-title">
                 <span>基本信息</span>
             </div>
+            <div class="info-area-content">
+                <template v-for="(item,$key) in selectedNodeInfo">
+                    <div>
+                        <span>{{$key}}：{{item}}</span>
+                    </div>
+                </template>
+            </div>
         </div>
     </div>
 </template>
 
 <script>
-    import KnowledgeGraphDisplay from './components/knowledge-graph-display.vue'
-    import Pie from './components/pie.vue'
-    import * as d3 from 'd3'
     import {drawKnowledgeGraph} from '../../mixins/knowledgeGraph.js'
 
     export default {
         name: "knowledge-graph",
-        components: {KnowledgeGraphDisplay, Pie},
         data() {
             return {
                 pageHeight: 0,
@@ -118,7 +114,7 @@
                     isSelected: false
                 }],
                 nodeTextKeyList: [],
-                selectedNodeTextKey: null
+                selectedNodeInfo: null
             }
         },
         methods: {
@@ -131,7 +127,12 @@
                 // self.$refs.knowledgeGraphDisplay.setKnowledgeGraphData();
                 let nodes = [{
                     name: '节点1节点1节点1节点1',
-                    id: 1
+                    id: 1,
+                    properties: {
+                        name: '节点1节点1节点1',
+                        date: '2019年7月11日',
+                        description: '描述文字'
+                    }
                 }, {
                     name: '节点2',
                     id: 2
@@ -157,7 +158,11 @@
                 self.selectedNodeTextKey = null;
                 let containerSvgId = '#container-svg';
                 let graphId = '#network-graph';
-                drawKnowledgeGraph(containerSvgId, graphId, data);
+                drawKnowledgeGraph(containerSvgId, graphId, data, function (node) {
+                    self.selectedNodeInfo = null;
+                    if (node && node.properties)
+                        self.selectedNodeInfo = JSON.parse(JSON.stringify(node.properties));
+                });
             },
             selectTag(item) {
                 item.isSelected = !item.isSelected;
@@ -273,6 +278,11 @@
                 color: @whiteColor;
                 font-weight: bold;
                 padding: 0 10px;
+            }
+            .info-area-content {
+                height: ~'calc(100% - 30px)';
+                overflow: auto;
+                padding: 5px 10px;
             }
         }
     }

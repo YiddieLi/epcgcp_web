@@ -75,7 +75,7 @@
             </div>
             <div class="info-area-content">
                 <template v-for="(item,$key) in selectedNodeInfo">
-                    <div>
+                    <div :key="$key">
                         <span>{{$key}}：{{item}}</span>
                     </div>
                 </template>
@@ -86,6 +86,7 @@
 
 <script>
     import {drawKnowledgeGraph} from '../../mixins/knowledgeGraph.js'
+    import * as d3 from 'd3'
 
     export default {
         name: "knowledge-graph",
@@ -114,7 +115,9 @@
                     isSelected: false
                 }],
                 nodeTextKeyList: [],
-                selectedNodeInfo: null
+                selectedNodeInfo: null,
+                data: null,
+                nodeMenuData: null
             }
         },
         methods: {
@@ -150,30 +153,97 @@
                     target: 3,
                     relation: '关系2'
                 }];
-                let data = {
+                self.data = {
                     nodes: nodes,
                     links: links
                 };
                 self.nodeTextKeyList = ['id', 'name'];
                 self.selectedNodeTextKey = null;
-                let containerSvgId = '#container-svg';
-                let graphId = '#network-graph';
-                drawKnowledgeGraph(containerSvgId, graphId, data, function (node) {
-                    self.selectedNodeInfo = null;
-                    if (node && node.properties)
-                        self.selectedNodeInfo = JSON.parse(JSON.stringify(node.properties));
-                });
+                drawKnowledgeGraph('#container-svg', '#network-graph', self.data, self.afterClickNodeFunc, self.nodeMenuData);
             },
             selectTag(item) {
                 item.isSelected = !item.isSelected;
+            },
+            afterClickNodeFunc(node) {
+                let self = this;
+                self.selectedNodeInfo = null;
+                if (node && node.properties)
+                    self.selectedNodeInfo = JSON.parse(JSON.stringify(node.properties));
+            },
+            generateNodeMenuData() {
+                console.log('sd');
+                let self = this;
+                return [
+                    [{
+                        text: '展开子节点',
+                        data: [[{
+                            text: '1层',
+                            func: function () {
+                                let clickNode = d3.select(this).datum();
+                                self.getExpandNodes(clickNode, 1);
+                            }
+                        }, {
+                            text: '2层',
+                            func: function () {
+                                let clickNode = d3.select(this).datum();
+                                self.getExpandNodes(clickNode, 2);
+                            }
+                        }, {
+                            text: '3层',
+                            func: function () {
+                                let clickNode = d3.select(this).datum();
+                                self.getExpandNodes(clickNode, 3);
+                            }
+                        }]]
+                    }, {
+                        text: '隐藏节点',
+                        func: function () {
+                            let clickNode = d3.select(this).datum();
+                            let nodes = [];
+                            self.data.nodes.forEach(node => {
+                                if (node.id !== clickNode.id) nodes.push(node);
+                            });
+                            let links = [];
+                            self.data.links.forEach(link => {
+                                if (link.source !== clickNode && link.target !== clickNode) links.push(link);
+                            });
+                            self.data = {
+                                nodes: nodes,
+                                links: links
+                            };
+                            drawKnowledgeGraph('#container-svg', '#network-graph', self.data, self.afterClickNodeFunc, self.nodeMenuData);
+                        }
+                    }, {
+                        text: '展示最短路径',
+                        func: function () {
+                            console.log('展示最短路径')
+                        }
+                    }]
+                ];
+            },
+            getExpandNodes(node, level) {
+                let self = this;
+                self.data.nodes.push({
+                    name: '节点4',
+                    id: 4
+                });
+                self.data.links.push({
+                    source: 2,
+                    target: 4,
+                    relation: '哈哈哈'
+                });
+                console.log(self.data, 'self.data');
+                drawKnowledgeGraph('#container-svg', '#network-graph', self.data, self.afterClickNodeFunc, self.nodeMenuData);
             }
         },
         mounted() {
             let self = this;
             self.pageHeight = this.$store.state.mainHeight;
+            self.nodeMenuData = self.generateNodeMenuData();
             $(document).ready(function () {
                 self.searchKnowledgeGraph();
             });
+
         }
     };
 </script>
@@ -246,18 +316,19 @@
             width: 60%;
             height: 100%;
             .graph-area {
-                height: ~'calc(100% - 37px)';
+                height: ~'calc(100% - 40px)';
                 width: 100%;
                 padding: 0 10px;
                 box-sizing: border-box;
             }
             .labels-bar {
                 width: 100%;
-                height: 20px;
+                height: 40px;
                 line-height: 20px;
                 padding: 8px 0;
                 cursor: default;
                 border-top: 1px solid @borderColor;
+                box-sizing: border-box;
                 ul {
                     margin: 0;
                     padding: 0;

@@ -1,8 +1,10 @@
 import * as d3 from 'd3'
+import '../lib/smartMenu/jquery-smartMenu.js'
+import '../css/smartMenu.less'
 
 let knowledgeGraphConfig = {
-    gravitation: 0.01,
-    repulsion: -120,
+    gravitation: 0.005,
+    repulsion: -50,
     nodeSize: 30,
     linkWidth: 2,
     linkType: 'slink',
@@ -191,6 +193,17 @@ function updateLabelsBar(node) {
             excludeAttr.push(attr);
         }
     }
+    if (node.properties) {
+        for (let property in node.properties) {
+            if (node.properties.hasOwnProperty(property) && excludeAttr.indexOf(property) === -1) {
+                labelBarUl.append("li")
+                    .attr('class', 'labels')
+                    .attr("id", "id-" + property)
+                    .text(property);
+                excludeAttr.push(property);
+            }
+        }
+    }
     d3.select("#id-name").classed("selected-labels", true);
 
     d3.selectAll(".labels")
@@ -203,8 +216,33 @@ function updateLabelsBar(node) {
         })
 }
 
-function drawKnowledgeGraph(containerSvgId, graphId, data, afterClickNode) {
+function zoomFunction(vars) {
+    let translate = "translate(" + vars.x + "," + vars.y + ") ";
+    let scale = "scale(" + vars.k + ") ";
+    let rotate = "rotate(0)";
+    if (typeof(vars.rotate) === "number") {
+        rotate = "rotate(" + vars.rotate + "," + (window.innerWidth / 2) + " " + (window.innerHeight / 2) + ")";
+    } else {
+        rotate = "rotate(" + vars.rotate.split(",")[0] + "," + (window.innerWidth / 2) + " " + (window.innerHeight / 2) + ")";
+    }
+    graphSvg.attr("transform", translate + scale + rotate);
+}
+
+function getTranslateAndScaleAndRotate(element) {
+    let transform = d3.select(element).attr("transform");
+    let matchTranslateScale = transform && /translate/.test(transform) && /scale/.test(transform) && transform.match(/translate([^]+)\s?scale([^]+)/);
+    let translate = matchTranslateScale && matchTranslateScale[1].split(",") || [0, 0];
+    let k = matchTranslateScale && matchTranslateScale[2] || 1;
+    let matchRotate = transform && /rotate/.test(transform) && transform.match(/\s?rotate\(([^)]+)/);
+    let rotate = matchRotate && matchRotate[1] || 0;
+    let x = translate[0];
+    let y = translate[1];
+    return {"x": x, "y": y, "k": k, "rotate": rotate};
+}
+
+function drawKnowledgeGraph(containerSvgId, graphId, data, afterClickNode, nodeMenuData) {
     console.log('enter');
+    console.log(JSON.parse(JSON.stringify(data)),'data');
     nodes = data.nodes;
     links = data.links;
     containerSvg = d3.select(containerSvgId);
@@ -218,6 +256,7 @@ function drawKnowledgeGraph(containerSvgId, graphId, data, afterClickNode) {
     simulation = d3.forceSimulation().force('link', linkForce).on('end', () => {
         simulation.stop()
     });
+
     let containerDiv = $(containerSvgId);
     let width = containerDiv[0].clientWidth;
     let height = containerDiv[0].clientHeight;
@@ -298,9 +337,19 @@ function drawKnowledgeGraph(containerSvgId, graphId, data, afterClickNode) {
     let nodeElementsEnter = nodeElements.enter()
         .append('g')
         .attr('class', 'node')
+        .attr('class', (node) => {
+            if (node['selected']) {
+                return 'node selected';
+            } else {
+                return 'node';
+            }
+        })
         .on('mousedown.select-node', function (node) {
             d3.selectAll(".selected").classed("selected", false);
             d3.select(this).classed('selected', true);
+            nodeElements.each(node => {
+                node['selected'] = false;
+            });
             node['selected'] = true;
             simulation.stop();
             updateLabelsBar(node);
@@ -336,30 +385,11 @@ function drawKnowledgeGraph(containerSvgId, graphId, data, afterClickNode) {
         });
 
     containerSvg.call(zoom).on('dblclick.zoom', null);
+
+    //绑定右键菜单
+    $('.node').smartMenu(nodeMenuData, {
+        name: 'nodeMenu'
+    });
 }
 
-function zoomFunction(vars) {
-    let translate = "translate(" + vars.x + "," + vars.y + ") ";
-    let scale = "scale(" + vars.k + ") ";
-    let rotate = "rotate(0)";
-    if (typeof(vars.rotate) === "number") {
-        rotate = "rotate(" + vars.rotate + "," + (window.innerWidth / 2) + " " + (window.innerHeight / 2) + ")";
-    } else {
-        rotate = "rotate(" + vars.rotate.split(",")[0] + "," + (window.innerWidth / 2) + " " + (window.innerHeight / 2) + ")";
-    }
-    graphSvg.attr("transform", translate + scale + rotate);
-}
-
-function getTranslateAndScaleAndRotate(element) {
-    let transform = d3.select(element).attr("transform");
-    let matchTranslateScale = transform && /translate/.test(transform) && /scale/.test(transform) && transform.match(/translate([^]+)\s?scale([^]+)/);
-    let translate = matchTranslateScale && matchTranslateScale[1].split(",") || [0, 0];
-    let k = matchTranslateScale && matchTranslateScale[2] || 1;
-    let matchRotate = transform && /rotate/.test(transform) && transform.match(/\s?rotate\(([^)]+)/);
-    let rotate = matchRotate && matchRotate[1] || 0;
-    let x = translate[0];
-    let y = translate[1];
-    return {"x": x, "y": y, "k": k, "rotate": rotate};
-}
-
-export {drawKnowledgeGraph}
+export {drawKnowledgeGraph};

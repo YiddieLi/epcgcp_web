@@ -175,7 +175,7 @@
                 let self = this;
                 return [
                     [{
-                        text: '展开子节点',
+                        text: '扩展关联节点',
                         data: [[{
                             text: '1层',
                             func: function () {

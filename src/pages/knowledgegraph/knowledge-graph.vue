@@ -19,10 +19,14 @@
                             <div class="tag-list">
                                 <template v-for="(item,$index) in attrLabelList">
                                     <div class="tag" :key="$index" :class="{'selected-tag':item.isSelected}"
-                                         @click="selectTag(item)">
+                                         @click="selectAttrLabel(item)" v-if="$index<=maxAttrLabelIndex">
                                         <span>{{item.name}}</span>
                                     </div>
                                 </template>
+                                <div class="tag" @click="nextPageAttrLabel(item)"
+                                     style="width: 30px;text-align: center;">
+                                    <i class="el-icon-plus"></i>
+                                </div>
                             </div>
                             <div class="split-line"></div>
                             <div style="margin-top: 5px">
@@ -30,9 +34,10 @@
                             </div>
                             <div class="tag-list">
                                 <template v-for="(item,$index) in attrList">
-                                    <div class="tag" :key="$index" :class="{'selected-tag':item.isSelected}"
-                                         @click="selectTag(item)">
-                                        <span>{{item.name}}</span>
+                                    <div class="tag" :key="$index"
+                                         :class="{'selected-tag':selectedAttr&&selectedAttr.id===item.id}"
+                                         @click="selectAttr(item)">
+                                        <span>{{item.displayname}}</span>
                                     </div>
                                 </template>
                             </div>
@@ -87,6 +92,7 @@
 <script>
     import {drawKnowledgeGraph} from '../../mixins/knowledgeGraph.js'
     import * as d3 from 'd3'
+    import {KgNodesFuzzy, CommonNeo4jLabels, KgNeo4jConfigProperties} from '../../resource/resource.js'
 
     export default {
         name: "knowledge-graph",
@@ -97,27 +103,16 @@
                 attrModelKeywords: null,
                 nodeLabelModelKeywords: null,
                 relationModelKeywords: null,
-                attrLabelList: [{
-                    name: "document",
-                    isSelected: false
-                }, {
-                    name: "notice",
-                    isSelected: false
-                }, {
-                    name: "plan",
-                    isSelected: false
-                }, {
-                    name: "document",
-                    isSelected: false
-                }],
+                attrLabelList: [],
                 attrList: [{
-                    name: "type",
-                    isSelected: false
+                    name: "type"
                 }],
+                selectedAttr: null,
                 nodeTextKeyList: [],
                 selectedNodeInfo: null,
                 data: null,
-                nodeMenuData: null
+                nodeMenuData: null,
+                maxAttrLabelIndex: 9
             }
         },
         methods: {
@@ -128,6 +123,41 @@
             searchKnowledgeGraph() {
                 let self = this;
                 // self.$refs.knowledgeGraphDisplay.setKnowledgeGraphData();
+                self.data = {
+                    nodes: [],
+                    links: []
+                };
+                let nodeLabels = [];
+                switch (self.searchModel) {
+                    case 'attrModel':
+                        self.attrLabelList.forEach(item => {
+                            if (item.isSelected) nodeLabels.push(item.name);
+                        });
+                        KgNodesFuzzy.gets({
+                            params: {
+                                keyword: self.attrModelKeywords,
+                                nodeLabels: nodeLabels,
+                                pageNum: 1,
+                                pageSize: 25,
+                                propertyKey: self.selectedAttr ? self.selectedAttr.name : null
+                            }
+                        }).then(({data}) => {
+                            if (data && data.list) {
+                                let nodes = [];
+                                data.list.forEach(item => {
+                                    let node = JSON.parse(JSON.stringify(item.properties));
+                                    node.id = item.id;
+                                    node.labels = item.labels;
+                                    nodes.push(node);
+                                });
+                                self.data.nodes = nodes;
+                                drawKnowledgeGraph('#container-svg', '#network-graph', self.data, self.afterClickNodeFunc, self.nodeMenuData);
+                            }
+                        });
+                        break;
+                }
+
+
                 let nodes = [{
                     name: '节点1节点1节点1节点1',
                     id: 1,
@@ -144,25 +174,39 @@
                     id: 3
                 }];
 
-                let links = [{
-                    source: 1,
-                    target: 2,
-                    relation: '关系1'
-                }, {
-                    source: 1,
-                    target: 3,
-                    relation: '关系2'
-                }];
+                let links = [];
+
+                // let links = [{
+                //     source: 1,
+                //     target: 2,
+                //     relation: '关系1'
+                // }, {
+                //     source: 1,
+                //     target: 3,
+                //     relation: '关系2'
+                // }];
                 self.data = {
                     nodes: nodes,
                     links: links
                 };
-                self.nodeTextKeyList = ['id', 'name'];
-                self.selectedNodeTextKey = null;
-                drawKnowledgeGraph('#container-svg', '#network-graph', self.data, self.afterClickNodeFunc, self.nodeMenuData);
+                // self.nodeTextKeyList = ['id', 'name'];
+                // self.selectedNodeTextKey = null;
+
             },
-            selectTag(item) {
+            selectAttrLabel(item) {
                 item.isSelected = !item.isSelected;
+            },
+            nextPageAttrLabel() {
+                let self = this;
+                self.maxAttrLabelIndex += 10;
+            },
+            selectAttr(item) {
+                let self = this;
+                if (self.selectedAttr && self.selectedAttr === item) {
+                    self.selectedAttr = null;
+                } else {
+                    self.selectedAttr = item;
+                }
             },
             afterClickNodeFunc(node) {
                 let self = this;
@@ -234,6 +278,32 @@
                 });
                 console.log(self.data, 'self.data');
                 drawKnowledgeGraph('#container-svg', '#network-graph', self.data, self.afterClickNodeFunc, self.nodeMenuData);
+            },
+            initParams() {
+                let self = this;
+                self.maxAttrLabelIndex = 9;
+                self.attrLabelList = [];
+                CommonNeo4jLabels.gets().then(({data}) => {
+                    if (data && data.length > 0) {
+                        data.forEach(item => {
+                            self.attrLabelList.push({
+                                name: item,
+                                isSelected: false
+                            })
+                        });
+                    }
+                });
+                self.attrList = [];
+                KgNeo4jConfigProperties.gets({
+                    params: {
+                        pageNum: 1,
+                        pageSize: 10000
+                    }
+                }).then(({data}) => {
+                    if (data && data.list) {
+                        self.attrList = JSON.parse(JSON.stringify(data.list));
+                    }
+                });
             }
         },
         mounted() {
@@ -243,7 +313,7 @@
             $(document).ready(function () {
                 self.searchKnowledgeGraph();
             });
-
+            self.initParams();
         }
     };
 </script>

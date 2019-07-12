@@ -3,8 +3,8 @@ import '../lib/smartMenu/jquery-smartMenu.js'
 import '../css/smartMenu.less'
 
 let knowledgeGraphConfig = {
-    gravitation: 0.005,
-    repulsion: -50,
+    gravitation: 0.001,
+    repulsion: -10,
     nodeSize: 30,
     linkWidth: 2,
     linkType: 'slink',
@@ -156,16 +156,18 @@ function getLinkTextRotate(link) {
 
 function textBreaking(d3text, text) {
     let showText = null;
-    text = text.toString();
-    if (text.length < 4) {
-        showText = text;
-    } else {
-        showText = text.substring(0, 4) + '…'
+    if (text) {
+        text = text.toString();
+        if (text.length < 4) {
+            showText = text;
+        } else {
+            showText = text.substring(0, 4) + '…'
+        }
+        d3text.append("tspan")
+            .attr("x", 0)
+            .attr("y", 2)
+            .text(showText);
     }
-    d3text.append("tspan")
-        .attr("x", 0)
-        .attr("y", 2)
-        .text(showText);
 }
 
 function showNodeText(key) {
@@ -242,7 +244,7 @@ function getTranslateAndScaleAndRotate(element) {
 
 function drawKnowledgeGraph(containerSvgId, graphId, data, afterClickNode, nodeMenuData) {
     console.log('enter');
-    console.log(JSON.parse(JSON.stringify(data)),'data');
+    console.log(JSON.parse(JSON.stringify(data)), 'data');
     nodes = data.nodes;
     links = data.links;
     containerSvg = d3.select(containerSvgId);

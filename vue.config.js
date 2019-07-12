@@ -4,9 +4,10 @@ module.exports = {
     configureWebpack: {
         plugins: [
             new webpack.ProvidePlugin({
-                $: "jquery",
-                jQuery: "jquery",
-                "windows.jQuery": "jquery"
+                $: 'jquery',
+                jQuery: 'jquery',
+                'windows.jQuery': 'jquery',
+                axios: 'axios'
             })
         ]
     }

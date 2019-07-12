@@ -7,6 +7,7 @@ import store from './store';
 import 'element-ui/lib/theme-chalk/index.css';
 import $ from 'jquery'
 import './css/app.less'
+import axios from 'axios'
 
 Vue.use(ElementUI);
 

@@ -22,8 +22,16 @@ class Resource {
     gets(config) {
         if (config) {
             config.params.sendTime = new Date().getTime();
+            // config.headers = {
+            //     'Content-type': 'application/json;charset=UTF-8'
+            // };
         } else {
-            config = {params: {sendTime: new Date().getTime()}}
+            config = {
+                params: {sendTime: new Date().getTime()},
+                // headers: {
+                //     'Content-type': 'application/json;charset=UTF-8'
+                // }
+            }
         }
         return axios.get(this.url, config);
     }
@@ -78,4 +86,10 @@ class Resource {
     }
 }
 
-export const TestApi = new Resource(sitemap.text);
+export const KgNodesNodeLabel = new Resource(sitemap.kg.nodes.nodeLabel);
+export const KgNodesFuzzy = new Resource(sitemap.kg.nodes.fuzzy);
+
+export const KgNeo4jConfigProperties = new Resource(sitemap.kg.neo4j.config.properties);
+
+
+export const CommonNeo4jLabels = new Resource(sitemap.common.neo4j.labels);

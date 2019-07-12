@@ -23,7 +23,7 @@
                                         <span>{{item.name}}</span>
                                     </div>
                                 </template>
-                                <div class="tag" @click="nextPageAttrLabel(item)"
+                                <div class="tag" @click="maxAttrLabelIndex+=10"
                                      style="width: 30px;text-align: center;">
                                     <i class="el-icon-plus"></i>
                                 </div>
@@ -50,6 +50,22 @@
                                 <i slot="prefix" class="el-input__icon el-icon-search"
                                    @click="searchKnowledgeGraph"></i>
                             </el-input>
+                            <div style="margin-top: 10px;">
+                                <span>查询标签范围：</span>
+                            </div>
+                            <div class="tag-list">
+                                <template v-for="(item,$index) in attrLabelList">
+                                    <div class="tag" :key="$index"
+                                         :class="{'selected-tag':selectedLabelModelLabel&&selectedLabelModelLabel.name===item.name}"
+                                         @click="selectLabelModelLabel(item)" v-if="$index<=maxLabelModelLabelIndex">
+                                        <span>{{item.name}}</span>
+                                    </div>
+                                </template>
+                                <div class="tag" @click="maxLabelModelLabelIndex+=10"
+                                     style="width: 30px;text-align: center;">
+                                    <i class="el-icon-plus"></i>
+                                </div>
+                            </div>
                         </div>
                     </el-tab-pane>
                     <el-tab-pane label="关系类别模式" name="relationModel">
@@ -81,7 +97,8 @@
             <div class="info-area-content">
                 <template v-for="(item,$key) in selectedNodeInfo">
                     <div :key="$key">
-                        <span>{{$key}}：{{item}}</span>
+                        <span style="font-weight: bold">{{$key}}：</span>
+                        <span>{{item}}</span>
                     </div>
                 </template>
             </div>
@@ -92,7 +109,12 @@
 <script>
     import {drawKnowledgeGraph} from '../../mixins/knowledgeGraph.js'
     import * as d3 from 'd3'
-    import {KgNodesFuzzy, CommonNeo4jLabels, KgNeo4jConfigProperties} from '../../resource/resource.js'
+    import {
+        KgNodesFuzzy,
+        CommonNeo4jLabels,
+        KgNeo4jConfigProperties,
+        KgNodesNodeLabel
+    } from '../../resource/resource.js'
 
     export default {
         name: "knowledge-graph",
@@ -112,7 +134,9 @@
                 selectedNodeInfo: null,
                 data: null,
                 nodeMenuData: null,
-                maxAttrLabelIndex: 9
+                maxAttrLabelIndex: 9,
+                selectedLabelModelLabel: null,
+                maxLabelModelLabelIndex: 9,
             }
         },
         methods: {
@@ -122,7 +146,6 @@
             },
             searchKnowledgeGraph() {
                 let self = this;
-                // self.$refs.knowledgeGraphDisplay.setKnowledgeGraphData();
                 self.data = {
                     nodes: [],
                     links: []
@@ -146,8 +169,31 @@
                                 let nodes = [];
                                 data.list.forEach(item => {
                                     let node = JSON.parse(JSON.stringify(item.properties));
-                                    node.id = item.id;
-                                    node.labels = item.labels;
+                                    node.id = JSON.parse(JSON.stringify(item.id));
+                                    node.labels = JSON.parse(JSON.stringify(item.labels));
+                                    node.properties = JSON.parse(JSON.stringify(item.properties));
+                                    nodes.push(node);
+                                });
+                                self.data.nodes = nodes;
+                                drawKnowledgeGraph('#container-svg', '#network-graph', self.data, self.afterClickNodeFunc, self.nodeMenuData);
+                            }
+                        });
+                        break;
+                    case 'nodeLabelModel':
+                        KgNodesNodeLabel.gets({
+                            params: {
+                                nodeLabel: self.selectedLabelModelLabel.name,
+                                pageNum: 1,
+                                pageSize: 25
+                            }
+                        }).then(({data}) => {
+                            if (data && data.list) {
+                                let nodes = [];
+                                data.list.forEach(item => {
+                                    let node = JSON.parse(JSON.stringify(item.properties));
+                                    node.id = JSON.parse(JSON.stringify(item.id));
+                                    node.labels = JSON.parse(JSON.stringify(item.labels));
+                                    node.properties = JSON.parse(JSON.stringify(item.properties));
                                     nodes.push(node);
                                 });
                                 self.data.nodes = nodes;
@@ -208,9 +254,14 @@
                     self.selectedAttr = item;
                 }
             },
+            selectLabelModelLabel(item) {
+                let self = this;
+                self.selectedLabelModelLabel = item;
+            },
             afterClickNodeFunc(node) {
                 let self = this;
                 self.selectedNodeInfo = null;
+                console.log(node, 'node');
                 if (node && node.properties)
                     self.selectedNodeInfo = JSON.parse(JSON.stringify(node.properties));
             },
@@ -281,6 +332,8 @@
             },
             initParams() {
                 let self = this;
+                self.selectedLabelModelLabel = null;
+                self.selectedAttr = null;
                 self.maxAttrLabelIndex = 9;
                 self.attrLabelList = [];
                 CommonNeo4jLabels.gets().then(({data}) => {
@@ -310,9 +363,6 @@
             let self = this;
             self.pageHeight = this.$store.state.mainHeight;
             self.nodeMenuData = self.generateNodeMenuData();
-            $(document).ready(function () {
-                self.searchKnowledgeGraph();
-            });
             self.initParams();
         }
     };

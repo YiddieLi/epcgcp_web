@@ -338,7 +338,6 @@ function drawKnowledgeGraph(containerSvgId, graphId, data, afterClickNode, nodeM
 
     let nodeElementsEnter = nodeElements.enter()
         .append('g')
-        .attr('class', 'node')
         .attr('class', (node) => {
             if (node['selected']) {
                 return 'node selected';
@@ -387,6 +386,10 @@ function drawKnowledgeGraph(containerSvgId, graphId, data, afterClickNode, nodeM
         });
 
     containerSvg.call(zoom).on('dblclick.zoom', null);
+
+    containerSvg.on('click', function () {
+        simulation.stop();
+    });
 
     //绑定右键菜单
     $('.node').smartMenu(nodeMenuData, {

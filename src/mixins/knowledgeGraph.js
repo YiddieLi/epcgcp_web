@@ -256,7 +256,7 @@ function drawKnowledgeGraph(containerSvgId, graphId, data, afterClickNode, nodeM
     }).strength(knowledgeGraphConfig.gravitation);
 
     simulation = d3.forceSimulation().force('link', linkForce).on('end', () => {
-        simulation.stop()
+        simulation.stop();
     });
 
     let containerDiv = $(containerSvgId);

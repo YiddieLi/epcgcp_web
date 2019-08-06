@@ -370,13 +370,13 @@
 
 <style lang="less">
     @import "../../css/global.less";
-    @import "../../css/graph.less";
 
     .knowledge-graph {
         height: 100%;
         width: 100%;
         background-color: @lightGreyBgColor;
         overflow: hidden;
+
         .search-area {
             float: left;
             width: 20%;
@@ -386,24 +386,30 @@
             box-sizing: border-box;
             padding: 0 10px;
             line-height: 30px;
+
             .search-area-title {
                 height: 30px;
                 font-weight: bold;
                 color: @darkGreenColor;
             }
+
             .search-condition {
                 .el-tabs__item:hover {
                     color: @darkGreenColor;
                 }
+
                 .el-tabs__item.is-active {
                     color: @darkGreenColor;
                 }
+
                 .el-tabs__active-bar {
                     background-color: @darkGreenColor;
                 }
+
                 .attr-model {
                     .tag-list {
                         display: inline-block;
+
                         .tag {
                             float: left;
                             height: 30px;
@@ -412,35 +418,123 @@
                             background-color: @lightGreyBgColor;
                             margin: 0 10px 5px 0;
                             cursor: default;
+
                             &:hover {
                                 background-color: @darkGreenColor;
                                 color: @whiteColor;
                             }
                         }
+
                         .selected-tag {
                             background-color: @darkGreenColor;
                             color: @whiteColor;
                         }
                     }
                 }
+
                 .node-label-model {
 
                 }
+
                 .relation-model {
 
                 }
             }
         }
+
         .show-area {
             float: left;
             width: 60%;
             height: 100%;
+
             .graph-area {
                 height: ~'calc(100% - 40px)';
                 width: 100%;
                 padding: 0 10px;
                 box-sizing: border-box;
+
+                circle {
+                    cursor: pointer;
+                    stroke-opacity: 0.8;
+                    stroke-width: 2px;
+                    stroke: @darkBlueColor;
+                }
+
+                circle:hover {
+                    stroke-opacity: 0.5;
+                    stroke-width: 5px;
+                }
+
+                .selected {
+                    stroke-dasharray: 1;
+                }
+
+                .selected circle {
+                    stroke-width: 5px;
+                }
+
+                .selected path {
+                    stroke: yellow;
+                    stroke-width: 4px !important;
+                }
+
+                .finded circle {
+                    stroke-width: 20px;
+                    stroke: #00FFFB;
+                }
+
+                path {
+                    fill: none;
+                    cursor: pointer;
+                    stroke: #01a0f1;
+                    stroke-width: 2px;
+                }
+
+                path:hover {
+                    stroke-width: 4px !important;
+                    stroke-opacity: 0.8;
+                }
+
+                .route {
+                    stroke: red;
+                    stroke-width: 5px;
+                }
+
+                text {
+                    text-anchor: middle;
+                    user-select: none;
+                    pointer-events: none;
+                }
+
+                .node-text {
+                    font-size: 10px;
+                    fill: white;
+                }
+
+                .link-text {
+                    font-size: 14px;
+                    fill: black;
+                }
+
+                .link-marker {
+                }
+
+                .labels {
+                    margin-left: 10px;
+                    float: left;
+                    padding: 0 10px;
+                    border: 1px solid @darkGreyColor;
+                    border-radius: 5px;
+                    background-color: @whiteColor;
+                }
+
+                .selected-labels {
+                    border: 1px solid @darkGreenColor;
+                    background-color: @darkGreenColor;
+                    color: white;
+                }
             }
+
             .labels-bar {
                 width: 100%;
                 height: 40px;
@@ -449,6 +543,7 @@
                 cursor: default;
                 border-top: 1px solid @borderColor;
                 box-sizing: border-box;
+
                 ul {
                     margin: 0;
                     padding: 0;
@@ -456,6 +551,7 @@
                 }
             }
         }
+
         .info-area {
             float: left;
             width: 20%;
@@ -463,6 +559,7 @@
             box-shadow: -2px 0 10px @boxShadowColorGrey;
             background-color: @whiteColor;
             line-height: 30px;
+
             .info-area-title {
                 height: 30px;
                 background-color: @darkGreenColor;
@@ -470,6 +567,7 @@
                 font-weight: bold;
                 padding: 0 10px;
             }
+
             .info-area-content {
                 height: ~'calc(100% - 30px)';
                 overflow: auto;

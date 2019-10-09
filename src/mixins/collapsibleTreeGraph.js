@@ -431,8 +431,6 @@ function update(source) {
     let duration = d3.event && d3.event.altKey ? 2500 : 250;
     nodes = root.descendants().reverse();
     links = root.links();
-    console.log(nodes, 'nodes')
-    console.log(links, 'links')
     tree(root);
 
     let left = root;

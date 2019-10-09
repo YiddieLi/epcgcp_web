@@ -13,13 +13,14 @@
 
 <script>
     import {drawTreeGraph} from "../../mixins/treeGraph.js"
-    import {drawCollapsibleTree} from "../../mixins/collapsibleTreeGraph";
 
     export default {
         name: "tree-graph",
         data() {
             return {
-                pageHeight: 0
+                pageHeight: 0,
+                pageWidth: 0,
+
             }
         },
         methods: {
@@ -34,7 +35,8 @@
                                 children: [
                                     {name: "线索", value: 100},
                                     {name: "目标", value: 100},
-                                    {name: "点位", value: 100}
+                                    {name: "点位", value: 100},
+                                    {name: "", value: ""}
                                 ]
                             },
                             {name: "线索", value: 100},
@@ -81,7 +83,7 @@
             width: 300px;
             height: 100%;
             border-left: 1px solid @borderColor;
-            box-sizing: border-box
+            box-sizing: border-box;
         }
 
         .graph-show-area {
